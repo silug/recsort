@@ -1,0 +1,9 @@
+recsort sorts files found by photorec into directories based on the
+extensions of the files.  Files are hard linked, so the original
+recup_dir.* are left unchanged.
+
+sortmp3dir will try to reconstruct filenames for each .mp3 file found
+based on the ID3 tag.  It does make changes to the directory, but if you
+run recsort first, then run sortmp3dir in the by_extension/mp3
+directory, no changes will be made to the original recup_dir.*
+directories.

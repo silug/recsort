@@ -1,0 +1,23 @@
+#!/bin/sh
+
+set -e
+
+find recup_dir* -type f -name '*.*' | \
+    while read file ; do
+        ext="$( echo "$file" | sed 's/^.*\.\([^.]*\)$/\1/' )"
+        if [ -n "$ext" ] ; then
+            mkdir -pv by_extension/"$ext"
+            ln -v "$file" by_extension/"$ext"/
+        else
+            mkdir -pv no_extension
+            ln -v "$file" no_extension/
+        fi
+    done
+
+find recup_dir* -type f \! -name '*.*' | \
+    while read file ; do
+        mkdir -pv no_extension
+        ln -v "$file" no_extension/
+    done
+
+# vi: set ai et:

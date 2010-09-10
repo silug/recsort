@@ -1,0 +1,75 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use POSIX;
+use MP3::Info;
+use DirHandle;
+
+sub my_rename($$) {
+    print STDERR "$_[0] => $_[1]\n";
+    return(rename($_[0], $_[1]));
+}
+
+sub my_mkdir($$) {
+    print STDERR "-> $_[0]\n";
+    return(mkdir($_[0], $_[1]));
+}
+
+my $dir=new DirHandle "." or die "Failed to read current directory: $!\n";
+
+for my $file (grep { -f $_ and /\.mp3/i } $dir->read) {
+    my $tag=get_mp3tag($file) or next;
+
+    my $tracknum;
+    if (exists($tag->{TRACKNUM})) {
+        $tracknum=$tag->{TRACKNUM};
+        $tracknum=~s/[^\w\-\.]/_/g;
+    }
+
+    my $title;
+    if (exists($tag->{TITLE})) {
+        $title=$tag->{TITLE};
+        $title=~s/[^\w\-\.]/_/g;
+    }
+
+    my $filename;
+    if (defined($tracknum) and $tracknum and defined($title) and $title) {
+        $filename=$tracknum . "_-_" . $title . ".mp3";
+    } elsif (defined($title) and $title) {
+        $filename=$title . ".mp3";
+    } else {
+        $filename=$file;
+    }
+
+    $filename=~s/^\.+//;
+
+    if ($tag->{ARTIST}) {
+        my $artist=$tag->{ARTIST};
+	$artist=~s/[^\w\-\.]/_/g;
+        $artist=~s/^\.+//;
+	die "Failed to create $artist: $!\n"
+	    if (!(my_mkdir($artist, 0755)) and ($! != EEXIST));
+	if ($tag->{ALBUM}) {
+	    my $album=$tag->{ALBUM};
+	    $album=~s/[^\w\-\.]/_/g;
+            $album=~s/^\.+//;
+	    die "Failed to create $artist/$album: $!\n"
+	        if (!(my_mkdir("$artist/$album", 0755)) and ($! != EEXIST));
+	    if (!-f "$artist/$album/$filename") {
+	        my_rename($file, "$artist/$album/$filename")
+	            or die "Failed to create $artist/$album/$filename: $!\n";
+	    } else {
+	        warn "$artist/$album/$filename already exists linking $file!";
+	    }
+	} else {
+	    if (!-f "$artist/$filename") {
+	        my_rename($file, "$artist/$filename")
+	            or die "Failed to create $artist/$filename: $!\n";
+	    } else {
+	        warn "$artist/$filename already exists linking $file!";
+	    }
+	}
+    }
+}
