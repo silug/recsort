@@ -4,12 +4,26 @@ set -e
 
 find recup_dir* -type f -name '*.*' | \
     while read file ; do
+        if [ ! -e "$file" ]; then
+            # FIXME - Is there some way to handle this?
+            echo "Unable to read $file: possibly file with trailing spaces?" >&2
+            continue
+        fi
         ext="$( echo "$file" | sed 's/^.*\.\([^.]*\)$/\1/' )"
         if [ -n "$ext" ] ; then
             mkdir -pv by_extension/"$ext"
+            if [ -e by_extension/"$ext"/"$( basename "$file" )" ]; then
+                # We've already been here.
+                continue
+            fi
             ln -v "$file" by_extension/"$ext"/
         else
+            # This shouldn't happen.
             mkdir -pv no_extension
+            if [ -e no_extension/"$ext"/"$( basename "$file" )" ]; then
+                # We've already been here.
+                continue
+            fi
             ln -v "$file" no_extension/
         fi
     done
@@ -17,6 +31,10 @@ find recup_dir* -type f -name '*.*' | \
 find recup_dir* -type f \! -name '*.*' | \
     while read file ; do
         mkdir -pv no_extension
+        if [ -e no_extension/"$ext"/"$( basename "$file" )" ]; then
+            # We've already been here.
+            continue
+        fi
         ln -v "$file" no_extension/
     done
 
